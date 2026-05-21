@@ -26,25 +26,25 @@ public interface OrderRepository extends JpaRepository<Order, Long> {
 	@Query("SELECT SUM (o.totalValue) FROM Order o WHERE o.date BETWEEN :date AND :finalDate AND o.paymentMethod = :method")
 	BigDecimal sumTotalValueByDateBetweenAndPaymentMethod(LocalDate date, LocalDate finalDate, PaymentMethod method);
 	
-	@Query("SELECT new com.reis.managementControl.Entities.DTO.TotalPerLocationDTO(o.location.name, SUM(o.totalValue))"
+	@Query("SELECT new com.reis.ManagementControl_API.Entities.DTO.TotalPerLocationDTO(o.location.name, SUM(o.totalValue))"
 			+ "FROM Order o WHERE o.date = :date GROUP By o.location.name")
 	List<TotalPerLocationDTO> findByDate(LocalDate date);
 	
-	@Query("SELECT new com.reis.managementControl.Entities.DTO.TotalPerLocationDTO(o.location.name, SUM(o.totalValue))"
+	@Query("SELECT new com.reis.ManagementControl_API.Entities.DTO.TotalPerLocationDTO(o.location.name, SUM(o.totalValue))"
 			+ "FROM Order o WHERE o.date = :date AND o.location.name IN :names "
 			+ "GROUP By o.location.name")
 	List<TotalPerLocationDTO> findByDateAndNames(LocalDate date, List<String> names);
 	
-	@Query("SELECT new com.reis.managementControl.Entities.DTO.TotalPerLocationDTO(o.location.name, SUM(o.totalValue))"
+	@Query("SELECT new com.reis.ManagementControl_API.Entities.DTO.TotalPerLocationDTO(o.location.name, SUM(o.totalValue))"
 			+ "FROM Order o WHERE o.date BETWEEN :date AND :finalDate GROUP By o.location.name")
 	List<TotalPerLocationDTO> findByDateBetween(LocalDate date, LocalDate finalDate);
 	
-	@Query("SELECT new com.reis.managementControl.Entities.DTO.TotalPerLocationDTO(o.location.name, SUM(o.totalValue))"
+	@Query("SELECT new com.reis.ManagementControl_API.Entities.DTO.TotalPerLocationDTO(o.location.name, SUM(o.totalValue))"
 			+ "FROM Order o WHERE o.date BETWEEN :date AND :finalDate AND o.location.name IN :names "
 			+ "GROUP By o.location.name")
 	List<TotalPerLocationDTO> findByDateBetweenAndNames(LocalDate date, LocalDate finalDate, List<String> names);
 	
-	@Query("SELECT new com.reis.managementControl.Entities.DTO.TotalPerLocationDTO(o.location.name, SUM(o.totalValue))"
+	@Query("SELECT new com.reis.ManagementControl_API.Entities.DTO.TotalPerLocationDTO(o.location.name, SUM(o.totalValue))"
 			+ "FROM Order o WHERE o.date BETWEEN :monday AND :sunday GROUP By o.location.name ORDER BY SUM(o.totalValue) DESC")
 	List<TotalPerLocationDTO> findByDateBetweenWeekly(LocalDate monday, LocalDate sunday, Pageable pageable);
 	
