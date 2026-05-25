@@ -2,11 +2,13 @@ package com.reis.management_control_API.Services;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import java.util.List;
+import java.util.Optional;
 
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -21,6 +23,7 @@ import com.reis.ManagementControl_API.Entities.DTO.ProductResponseDTO;
 import com.reis.ManagementControl_API.Entities.Enums.Category;
 import com.reis.ManagementControl_API.Repositories.ProductRepository;
 import com.reis.ManagementControl_API.Services.ProductService;
+import com.reis.ManagementControl_API.Services.Exceptions.ResourceNotFoundException;
 
 @ExtendWith(MockitoExtension.class)
 public class ProductServiceTest {
@@ -69,6 +72,42 @@ public class ProductServiceTest {
 		assertEquals(listExpected.get(0).getCategory(), listReceived.get(0).getCategory());
 		
 		verify(repository).findByNameContainingIgnoreCase(any());
+	}
+	
+	@Test
+	@DisplayName("Should return a ProductResponseDTO when find object")
+	void findByIdSuccessCase() {
+		Long id = 1L;
+		
+		Product productExpected = createStandardProduct();
+		
+		when(repository.findById(id)).thenReturn(Optional.of(productExpected));
+		
+		ProductResponseDTO productReceived = service.findById(id);
+		
+		assertNotNull(productReceived);
+		assertEquals(productExpected.getId(), productReceived.getId());
+		assertEquals(productExpected.getName(), productReceived.getName());
+		assertEquals(productExpected.getCategory(), productReceived.getCategory());
+		
+		verify(repository).findById(id);
+	}
+	
+	@Test
+	@DisplayName("Should throw a ResourceNotFoundException when doesn't find object")
+	void findByIdResouceNotFoundCase() {
+		Long id = 99L;
+		
+		when(repository.findById(id)).thenReturn(Optional.empty());
+		
+		ResourceNotFoundException exception = assertThrows(ResourceNotFoundException.class, () ->{
+			service.findById(id);
+		});
+		
+		assertNotNull(exception.getMessage());
+		assertEquals(ResourceNotFoundException.class, exception.getClass());
+		
+		verify(repository).findById(id);
 	}
 	
 	private Product createStandardProduct() {
