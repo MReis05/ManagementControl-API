@@ -1,7 +1,10 @@
 package com.reis.management_control_API.Controllers;
 
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -17,12 +20,15 @@ import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.util.ReflectionTestUtils;
 import org.springframework.test.web.servlet.MockMvc;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.reis.ManagementControl_API.ManagementControlApiApplication;
 import com.reis.ManagementControl_API.Controllers.ProductController;
 import com.reis.ManagementControl_API.Entities.Product;
+import com.reis.ManagementControl_API.Entities.DTO.ProductRequestDTO;
 import com.reis.ManagementControl_API.Entities.DTO.ProductResponseDTO;
 import com.reis.ManagementControl_API.Entities.Enums.Category;
 import com.reis.ManagementControl_API.Services.ProductService;
+import com.reis.ManagementControl_API.Services.Exceptions.ProductExistsException;
 import com.reis.ManagementControl_API.Services.Exceptions.ResourceNotFoundException;
 
 @WebMvcTest(ProductController.class)
@@ -31,6 +37,9 @@ public class ProductControllerTest {
 
 	@Autowired
 	private MockMvc mockMvc;
+	
+	@Autowired
+	private ObjectMapper mapper;
 	
 	@MockitoBean
 	private ProductService service;
@@ -101,6 +110,66 @@ public class ProductControllerTest {
 				.andExpect(status().isNotFound())
 				.andExpect(jsonPath("$.status").value(404))
 				.andExpect(jsonPath("$.error").value("Resource not found"));
+	}
+	
+	@Test
+	@DisplayName("Should return 201 created and the location header")
+	void insertSuccessCase() throws Exception {
+		ProductRequestDTO inputDTO = new ProductRequestDTO("Coca Lata", Category.BEBIDAS);
+		ProductResponseDTO outputDTO = new ProductResponseDTO(createStandardProduct());
+		
+		when(service.insert(any(ProductRequestDTO.class))).thenReturn(outputDTO);
+		
+		String jsonBody = mapper.writeValueAsString(inputDTO);
+		
+		mockMvc.perform(
+				post("/products")
+				.contentType(MediaType.APPLICATION_JSON)
+				.content(jsonBody)
+				)
+				.andExpect(status().isCreated())
+				.andExpect(jsonPath("$.id").exists())
+				.andExpect(jsonPath("$.name").value("Coca Lata"))
+				.andExpect(jsonPath("$.category").value(Category.BEBIDAS.toString()))
+				.andExpect(header().exists("Location"));
+	}
+	
+	@Test
+	@DisplayName("Should return 409 Conflit when already exists a product with the name")
+	void insertConflitNameCase() throws Exception {
+		ProductRequestDTO inputDTO = new ProductRequestDTO("Coca Lata", Category.BEBIDAS);
+		
+		when(service.insert(any(ProductRequestDTO.class))).thenThrow(ProductExistsException.class);
+		
+		String jsonBody = mapper.writeValueAsString(inputDTO);
+		
+		mockMvc.perform(
+				post("/products")
+				.contentType(MediaType.APPLICATION_JSON)
+				.content(jsonBody)
+				)
+				.andExpect(status().isConflict())
+				.andExpect(jsonPath("$.status").value(409))
+				.andExpect(jsonPath("$.error").value("Resource conflit"));
+	}
+	
+	@Test
+	@DisplayName("Should return 422 Unprocessable Entity when any field isn't valid")
+	void insertValidationsExceptionCase() throws Exception {
+		ProductRequestDTO inputDTO = new ProductRequestDTO();
+		inputDTO.setCategory(Category.BEBIDAS);
+		
+		String jsonBody = mapper.writeValueAsString(inputDTO);
+		
+		mockMvc.perform(
+				post("/products")
+				.contentType(MediaType.APPLICATION_JSON)
+				.content(jsonBody)
+				)
+				.andExpect(status().isUnprocessableEntity())
+				.andExpect(jsonPath("$.status").value(422))
+				.andExpect(jsonPath("$.error").value("Validation Error"))
+				.andExpect(jsonPath("$.errors").isArray());
 	}
 	
 	private Product createStandardProduct() {

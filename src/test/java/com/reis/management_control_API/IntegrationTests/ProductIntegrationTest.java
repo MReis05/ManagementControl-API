@@ -1,6 +1,9 @@
 package com.reis.management_control_API.IntegrationTests;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -16,8 +19,10 @@ import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.reis.ManagementControl_API.ManagementControlApiApplication;
 import com.reis.ManagementControl_API.Entities.Product;
+import com.reis.ManagementControl_API.Entities.DTO.ProductRequestDTO;
 import com.reis.ManagementControl_API.Entities.Enums.Category;
 import com.reis.ManagementControl_API.Repositories.ProductRepository;
 
@@ -33,6 +38,9 @@ public class ProductIntegrationTest {
 	
 	@Autowired
 	private ProductRepository repository;
+	
+	@Autowired
+	private ObjectMapper mapper;
 	
 	private Long id;
 	
@@ -53,7 +61,7 @@ public class ProductIntegrationTest {
 				.contentType(MediaType.APPLICATION_JSON)
 				)
 				.andExpect(status().isOk())
-				.andExpect(jsonPath("$[0].id").value(1L))
+				.andExpect(jsonPath("$[0].id").value(id))
 				.andExpect(jsonPath("$[0].name").value("Coca Lata"))
 				.andExpect(jsonPath("$[0].category").value(Category.BEBIDAS.toString()));
 	}
@@ -66,7 +74,7 @@ public class ProductIntegrationTest {
 				.contentType(MediaType.APPLICATION_JSON)
 				)
 				.andExpect(status().isOk())
-				.andExpect(jsonPath("$[0].id").value(1L))
+				.andExpect(jsonPath("$[0].id").value(id))
 				.andExpect(jsonPath("$[0].name").value("Coca Lata"))
 				.andExpect(jsonPath("$[0].category").value(Category.BEBIDAS.toString()));
 	}
@@ -107,5 +115,69 @@ public class ProductIntegrationTest {
 				.andExpect(jsonPath("$.status").value(404))
 				.andExpect(jsonPath("$.error").value("Resource not found"))
 				.andExpect(jsonPath("$.message").value("Id não encontrado. Id:" + (id + 98)));
+	}
+	
+	@Test
+	@DisplayName("Should create a Product in Database and return 201 Created status (End-to-End)")
+	void insertSuccessCase() throws Exception {
+		ProductRequestDTO inputDTO = new ProductRequestDTO("Farinha de Trigo", Category.INSUMOS_SECUNDARIOS);
+		
+		String jsonBody = mapper.writeValueAsString(inputDTO);
+		
+		mockMvc.perform(
+				post("/products")
+				.contentType(MediaType.APPLICATION_JSON)
+				.content(jsonBody)
+				)
+				.andExpect(status().isCreated())
+				.andExpect(jsonPath("$.name").value("Farinha de Trigo"))
+				.andExpect(jsonPath("$.category").value(Category.INSUMOS_SECUNDARIOS.name()))
+				.andExpect(header().exists("Location"));
+		
+		Product savedProduct = repository.findByNameContainingIgnoreCase("Farinha de Trigo").getFirst();
+		
+		assertEquals(repository.count(), 2);
+		assertEquals(inputDTO.getName(), savedProduct.getName());
+		assertEquals(inputDTO.getCategory(), savedProduct.getCategory());
+	}
+	
+	@Test
+	@DisplayName("Should return 409 Conflit when already exists a product with the name")
+	void insertConflitNameCase() throws Exception {
+		ProductRequestDTO inputDTO = new ProductRequestDTO("Coca Lata", Category.BEBIDAS);
+		
+		String jsonBody = mapper.writeValueAsString(inputDTO);
+		
+		mockMvc.perform(
+				post("/products")
+				.contentType(MediaType.APPLICATION_JSON)
+				.content(jsonBody)
+				)
+				.andExpect(status().isConflict())
+				.andExpect(jsonPath("$.status").value(409))
+				.andExpect(jsonPath("$.error").value("Resource conflit"));
+		
+		assertEquals(repository.count(), 1);
+	}
+	
+	@Test
+	@DisplayName("Should return 422 Unprocessable Entity when any field isn't valid")
+	void insertValidationsExceptionCase() throws Exception {
+		ProductRequestDTO inputDTO = new ProductRequestDTO();
+		inputDTO.setCategory(Category.BEBIDAS);
+		
+		String jsonBody = mapper.writeValueAsString(inputDTO);
+		
+		mockMvc.perform(
+				post("/products")
+				.contentType(MediaType.APPLICATION_JSON)
+				.content(jsonBody)
+				)
+				.andExpect(status().isUnprocessableEntity())
+				.andExpect(jsonPath("$.status").value(422))
+				.andExpect(jsonPath("$.error").value("Validation Error"))
+				.andExpect(jsonPath("$.errors").isArray());
+		
+		assertEquals(repository.count(), 1);
 	}
 }

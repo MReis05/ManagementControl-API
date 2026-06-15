@@ -39,7 +39,7 @@ public class ProductService {
 	}
 	
 	@Transactional
-	public ProductResponseDTO save (ProductRequestDTO dto) {
+	public ProductResponseDTO insert (ProductRequestDTO dto) {
 		if(repository.existsByNameIgnoreCase(dto.getName())) {
 			throw new ProductExistsException();
 		}

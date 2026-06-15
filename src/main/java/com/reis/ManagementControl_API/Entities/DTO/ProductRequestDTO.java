@@ -8,7 +8,7 @@ public class ProductRequestDTO {
 
 	@NotBlank
 	private String name;
-	private Category Category;
+	private Category category;
 	
 	public ProductRequestDTO() {
 	}
@@ -16,7 +16,7 @@ public class ProductRequestDTO {
 	public ProductRequestDTO(String name, Category category) {
 		super();
 		this.name = name;
-		this.Category = category;
+		this.category = category;
 	}
 
 	public String getName() {
@@ -28,10 +28,10 @@ public class ProductRequestDTO {
 	}
 
 	public Category getCategory() {
-		return Category;
+		return category;
 	}
 
 	public void setCategory(Category category) {
-		Category = category;
+		this.category = category;
 	}
 }
