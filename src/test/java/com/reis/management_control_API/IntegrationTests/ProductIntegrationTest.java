@@ -1,8 +1,10 @@
 package com.reis.management_control_API.IntegrationTests;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -177,6 +179,81 @@ public class ProductIntegrationTest {
 				.andExpect(jsonPath("$.status").value(422))
 				.andExpect(jsonPath("$.error").value("Validation Error"))
 				.andExpect(jsonPath("$.errors").isArray());
+		
+		assertEquals(repository.count(), 1);
+	}
+	
+	@Test
+	@DisplayName("Should return 200 Ok and update product in database (End-to-End)")
+	void updateSuccessCase() throws Exception {
+		ProductRequestDTO inputDTO = new ProductRequestDTO();
+		inputDTO.setName("Coca de 1 Litro");
+		
+		String jsonBody = mapper.writeValueAsString(inputDTO);
+		
+		mockMvc.perform(
+				put("/products/" + id)
+				.contentType(MediaType.APPLICATION_JSON)
+				.content(jsonBody)
+				)
+				.andExpect(status().isOk())
+				.andExpect(jsonPath("$.id").value(id))
+				.andExpect(jsonPath("$.name").value("Coca de 1 Litro"))
+				.andExpect(jsonPath("$.category").value(Category.BEBIDAS.name()));
+		
+		Product obj = repository.findById(id).orElseThrow();
+		
+		assertEquals(repository.count(), 1);
+		assertEquals(obj.getId(), id);
+		assertEquals(obj.getName(), "Coca de 1 Litro");
+		assertEquals(obj.getCategory(), Category.BEBIDAS);
+	}
+	
+	@Test
+	@DisplayName("Should return 404 Not Found and don't update product in database (End-to-End)")
+	void updateResourceNotFoundCase() throws Exception {
+		ProductRequestDTO inputDTO = new ProductRequestDTO();
+		inputDTO.setName("Coca de 1 Litro");
+		
+		String jsonBody = mapper.writeValueAsString(inputDTO);
+		
+		mockMvc.perform(
+				put("/products/" + (id + 98L))
+				.contentType(MediaType.APPLICATION_JSON)
+				.content(jsonBody)
+				)
+				.andExpect(status().isNotFound())
+				.andExpect(jsonPath("$.status").value(404))
+				.andExpect(jsonPath("$.error").value("Resource not found"));
+		
+		Product obj = repository.findById(id).orElseThrow();
+		
+		assertEquals(repository.count(), 1);
+		assertEquals(obj.getName(), "Coca Lata");
+	}
+	
+	@Test
+	@DisplayName("Should return 204 No Content and delete product in database (End-to-End)")
+	void deleteSuccessCase() throws Exception {
+		mockMvc.perform(
+				delete("/products/" + id)
+				.contentType(MediaType.APPLICATION_JSON)
+				)
+				.andExpect(status().isNoContent());
+		
+		assertEquals(repository.count(), 0);
+	}
+	
+	@Test
+	@DisplayName("Should return 404 Not Found and don't delete product in database (End-to-End)")
+	void deleteResourceNotFoundCase() throws Exception {
+		mockMvc.perform(
+				delete("/products/" + (id + 98L))
+				.contentType(MediaType.APPLICATION_JSON)
+				)
+				.andExpect(status().isNotFound())
+				.andExpect(jsonPath("$.status").value(404))
+				.andExpect(jsonPath("$.error").value("Resource not found"));
 		
 		assertEquals(repository.count(), 1);
 	}

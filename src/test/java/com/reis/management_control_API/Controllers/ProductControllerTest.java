@@ -1,9 +1,13 @@
 package com.reis.management_control_API.Controllers;
 
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.when;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -28,6 +32,7 @@ import com.reis.ManagementControl_API.Entities.DTO.ProductRequestDTO;
 import com.reis.ManagementControl_API.Entities.DTO.ProductResponseDTO;
 import com.reis.ManagementControl_API.Entities.Enums.Category;
 import com.reis.ManagementControl_API.Services.ProductService;
+import com.reis.ManagementControl_API.Services.Exceptions.DatabaseException;
 import com.reis.ManagementControl_API.Services.Exceptions.ProductExistsException;
 import com.reis.ManagementControl_API.Services.Exceptions.ResourceNotFoundException;
 
@@ -170,6 +175,92 @@ public class ProductControllerTest {
 				.andExpect(jsonPath("$.status").value(422))
 				.andExpect(jsonPath("$.error").value("Validation Error"))
 				.andExpect(jsonPath("$.errors").isArray());
+	}
+	
+	@Test
+	@DisplayName("Should return 200 Ok when updating product")
+	void updateSuccessCase() throws Exception {
+		Long id = 1L;
+		ProductRequestDTO inputDTO = new ProductRequestDTO("Coca Lata", Category.BEBIDAS);
+		
+		ProductResponseDTO outputDTO = new ProductResponseDTO(createStandardProduct());
+		
+		when(service.update(eq(id), any(ProductRequestDTO.class))).thenReturn(outputDTO);
+		
+		String jsonBody = mapper.writeValueAsString(inputDTO);
+		
+		mockMvc.perform(
+				put("/products/" + id)
+				.contentType(MediaType.APPLICATION_JSON)
+				.content(jsonBody)
+				)
+				.andExpect(status().isOk())
+				.andExpect(jsonPath("$.name").value("Coca Lata"))
+				.andExpect(jsonPath("$.category").value(Category.BEBIDAS.name()));
+	}
+	
+	@Test
+	@DisplayName("Should return 404 Not Found when doesn't find object")
+	void updateResourceNotFoundCase() throws Exception {
+		Long id = 99L;
+		ProductRequestDTO inputDTO = new ProductRequestDTO("Coca Lata", Category.BEBIDAS);
+		
+		when(service.update(eq(id), any(ProductRequestDTO.class))).thenThrow(ResourceNotFoundException.class);
+		
+		String jsonBody = mapper.writeValueAsString(inputDTO);
+		
+		mockMvc.perform(
+				put("/products/" + id)
+				.contentType(MediaType.APPLICATION_JSON)
+				.content(jsonBody)
+				)
+				.andExpect(status().isNotFound())
+				.andExpect(jsonPath("$.status").value(404))
+				.andExpect(jsonPath("$.error").value("Resource not found"));
+	}
+	
+	@Test
+	@DisplayName("Should return 204 No Content when deleting product")
+	void deleteSuccessCase() throws Exception {
+		Long id = 1L;
+		
+		mockMvc.perform(
+				delete("/products/" + id)
+				.contentType(MediaType.APPLICATION_JSON)
+				)
+				.andExpect(status().isNoContent());
+	}
+	
+	@Test
+	@DisplayName("Should return 404 Not Found when doesn't find product")
+	void deleteResourceNotFoundCase() throws Exception {
+		Long id = 99L;
+		
+		doThrow(ResourceNotFoundException.class).when(service).delete(id);
+		
+		mockMvc.perform(
+				delete("/products/" + id)
+				.contentType(MediaType.APPLICATION_JSON)
+				)
+				.andExpect(status().isNotFound())
+				.andExpect(jsonPath("$.status").value(404))
+				.andExpect(jsonPath("$.error").value("Resource not found"));
+	}
+	
+	@Test
+	@DisplayName("Should return 400 Bad Request when deleting product with depedencies")
+	void deleteIntegrityViolationCase() throws Exception {
+		Long id = 99L;
+		
+		doThrow(DatabaseException.class).when(service).delete(id);
+		
+		mockMvc.perform(
+				delete("/products/" + id)
+				.contentType(MediaType.APPLICATION_JSON)
+				)
+				.andExpect(status().isBadRequest())
+				.andExpect(jsonPath("$.status").value(400))
+				.andExpect(jsonPath("$.error").value("Database error"));
 	}
 	
 	private Product createStandardProduct() {

@@ -9,6 +9,7 @@ import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 
+import com.reis.ManagementControl_API.Services.Exceptions.DatabaseException;
 import com.reis.ManagementControl_API.Services.Exceptions.ProductExistsException;
 import com.reis.ManagementControl_API.Services.Exceptions.ResourceNotFoundException;
 
@@ -43,6 +44,14 @@ public class ControllerExceptionHandler {
 			err.addError(f.getField(), f.getDefaultMessage());
 		}
 		
+		return ResponseEntity.status(status).body(err);
+	}
+	
+	@ExceptionHandler(DatabaseException.class)
+	public ResponseEntity<StandardError> databaseException(DatabaseException e , HttpServletRequest request){
+		String error = "Database error";
+		HttpStatus status = HttpStatus.BAD_REQUEST;
+		StandardError err = new StandardError(Instant.now(), status.value(), error, e.getMessage(), request.getRequestURI());
 		return ResponseEntity.status(status).body(err);
 	}
 }
