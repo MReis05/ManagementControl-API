@@ -33,7 +33,7 @@ import com.reis.ManagementControl_API.Entities.DTO.ProductResponseDTO;
 import com.reis.ManagementControl_API.Entities.Enums.Category;
 import com.reis.ManagementControl_API.Services.ProductService;
 import com.reis.ManagementControl_API.Services.Exceptions.DatabaseException;
-import com.reis.ManagementControl_API.Services.Exceptions.ProductExistsException;
+import com.reis.ManagementControl_API.Services.Exceptions.DataConflitException;
 import com.reis.ManagementControl_API.Services.Exceptions.ResourceNotFoundException;
 
 @WebMvcTest(ProductController.class)
@@ -144,7 +144,7 @@ public class ProductControllerTest {
 	void insertConflitNameCase() throws Exception {
 		ProductRequestDTO inputDTO = new ProductRequestDTO("Coca Lata", Category.BEBIDAS);
 		
-		when(service.insert(any(ProductRequestDTO.class))).thenThrow(ProductExistsException.class);
+		when(service.insert(any(ProductRequestDTO.class))).thenThrow(DataConflitException.class);
 		
 		String jsonBody = mapper.writeValueAsString(inputDTO);
 		

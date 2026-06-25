@@ -3,7 +3,6 @@ package com.reis.ManagementControl_API.Services;
 import java.util.List;
 import java.util.stream.Collectors;
 
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -12,15 +11,18 @@ import com.reis.ManagementControl_API.Entities.Product;
 import com.reis.ManagementControl_API.Entities.DTO.ProductRequestDTO;
 import com.reis.ManagementControl_API.Entities.DTO.ProductResponseDTO;
 import com.reis.ManagementControl_API.Repositories.ProductRepository;
+import com.reis.ManagementControl_API.Services.Exceptions.DataConflitException;
 import com.reis.ManagementControl_API.Services.Exceptions.DatabaseException;
-import com.reis.ManagementControl_API.Services.Exceptions.ProductExistsException;
 import com.reis.ManagementControl_API.Services.Exceptions.ResourceNotFoundException;
 
 @Service
 public class ProductService {
 
-	@Autowired
-	private ProductRepository repository;
+	private final ProductRepository repository;
+
+	ProductService(ProductRepository repository) {
+		this.repository = repository;
+	}
 	
 	@Transactional(readOnly = true)
 	public List<ProductResponseDTO> findAll(){
@@ -40,16 +42,12 @@ public class ProductService {
 	
 	@Transactional
 	public ProductResponseDTO insert (ProductRequestDTO dto) {
-		if(repository.existsByNameIgnoreCase(dto.getName())) {
-			throw new ProductExistsException();
+		if(existsByNameIgnoreCase(dto.getName())) {
+			throw new DataConflitException();
 		}
 		Product product = new Product(dto.getName(), dto.getCategory());
 		product = repository.save(product);
 		return new ProductResponseDTO(product);
-	}
-	
-	public boolean existsByNameIgnoreCase(String name) {
-		return repository.existsByNameIgnoreCase(name);
 	}
 	
 	@Transactional
@@ -75,6 +73,11 @@ public class ProductService {
 		catch(DataIntegrityViolationException e) {
 			throw new DatabaseException(e.getMessage());
 		}
+	}
+	
+	@Transactional(readOnly = true)
+	public boolean existsByNameIgnoreCase(String name) {
+		return repository.existsByNameIgnoreCase(name);
 	}
 	
 	private void updateData(Product product, ProductRequestDTO dto) {

@@ -29,7 +29,7 @@ import com.reis.ManagementControl_API.Entities.Enums.Category;
 import com.reis.ManagementControl_API.Repositories.ProductRepository;
 import com.reis.ManagementControl_API.Services.ProductService;
 import com.reis.ManagementControl_API.Services.Exceptions.DatabaseException;
-import com.reis.ManagementControl_API.Services.Exceptions.ProductExistsException;
+import com.reis.ManagementControl_API.Services.Exceptions.DataConflitException;
 import com.reis.ManagementControl_API.Services.Exceptions.ResourceNotFoundException;
 
 @ExtendWith(MockitoExtension.class)
@@ -144,12 +144,12 @@ public class ProductServiceTest {
 		
 		when(repository.existsByNameIgnoreCase("Oleo")).thenReturn(true);
 		
-		ProductExistsException exception = assertThrows(ProductExistsException.class, () ->{
+		DataConflitException exception = assertThrows(DataConflitException.class, () ->{
 			service.insert(dto);
 		});
 		
 		assertNotNull(exception);
-		assertEquals(ProductExistsException.class, exception.getClass());
+		assertEquals(DataConflitException.class, exception.getClass());
 		assertEquals("Esse produto já existe em nosso banco de dados", exception.getMessage());
 	}
 	

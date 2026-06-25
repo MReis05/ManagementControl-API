@@ -10,7 +10,7 @@ import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 
 import com.reis.ManagementControl_API.Services.Exceptions.DatabaseException;
-import com.reis.ManagementControl_API.Services.Exceptions.ProductExistsException;
+import com.reis.ManagementControl_API.Services.Exceptions.DataConflitException;
 import com.reis.ManagementControl_API.Services.Exceptions.ResourceNotFoundException;
 
 import jakarta.servlet.http.HttpServletRequest;
@@ -26,8 +26,8 @@ public class ControllerExceptionHandler {
 		return ResponseEntity.status(status).body(err);
 	}
 	
-	@ExceptionHandler(ProductExistsException.class)
-	public ResponseEntity<StandardError> productExist(ProductExistsException e, HttpServletRequest request){
+	@ExceptionHandler(DataConflitException.class)
+	public ResponseEntity<StandardError> resourceExist(DataConflitException e, HttpServletRequest request){
 		String error = "Resource conflit";
 		HttpStatus status = HttpStatus.CONFLICT;
 		StandardError err = new StandardError(Instant.now(), status.value(), error, e.getMessage(), request.getRequestURI());
