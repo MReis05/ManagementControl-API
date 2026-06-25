@@ -138,8 +138,8 @@ public class ProductServiceTest {
 	}
 	
 	@Test
-	@DisplayName("Should throw a ProductExistsExeception when already exists a product with the name")
-	void insertConflitNameCase() {
+	@DisplayName("Should throw a DataConflitExeception when already exists a product with the name")
+	void insertDataConflitCase() {
 		ProductRequestDTO dto = new ProductRequestDTO("Oleo", Category.INSUMOS_SECUNDARIOS);
 		
 		when(repository.existsByNameIgnoreCase("Oleo")).thenReturn(true);
@@ -150,7 +150,7 @@ public class ProductServiceTest {
 		
 		assertNotNull(exception);
 		assertEquals(DataConflitException.class, exception.getClass());
-		assertEquals("Esse produto já existe em nosso banco de dados", exception.getMessage());
+		assertEquals("Esse objeto já existe em nosso banco de dados", exception.getMessage());
 	}
 	
 	@Test

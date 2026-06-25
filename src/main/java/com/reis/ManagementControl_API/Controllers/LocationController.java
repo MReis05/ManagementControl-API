@@ -44,7 +44,7 @@ public class LocationController {
 	
 	@PostMapping
 	public ResponseEntity<LocationResponseDTO> insert(@Valid @RequestBody LocationRequestDTO dto){
-		LocationResponseDTO resp = service.save(dto);
+		LocationResponseDTO resp = service.insert(dto);
 		URI uri = ServletUriComponentsBuilder.fromCurrentRequest().path("/{id}").buildAndExpand(resp.getId()).toUri();
 		return ResponseEntity.created(uri).body(resp);
 	}

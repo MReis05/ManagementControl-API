@@ -36,7 +36,7 @@ public class LocationService {
 	}
 	
 	@Transactional
-	public LocationResponseDTO save (LocationRequestDTO dto) {
+	public LocationResponseDTO insert (LocationRequestDTO dto) {
 		if(existsByNameIgnoreCase(dto.getName())){
 			throw new DataConflitException();
 		}
@@ -58,7 +58,7 @@ public class LocationService {
 	
 	@Transactional
 	public void delete(Long id) {
-		if(repository.existsById(id)) {
+		if(!repository.existsById(id)) {
 			throw new ResourceNotFoundException(id);
 		}
 		
